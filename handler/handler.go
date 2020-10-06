@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"TechNo_Tree_API/db"
+	"Order_Inventory/db"
 	"encoding/json"
 	"net/http"
 	"strings"

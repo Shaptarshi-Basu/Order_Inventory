@@ -1,8 +1,8 @@
 package main
 
 import (
-	"TechNo_Tree_API/handler"
-	"TechNo_Tree_API/routes"
+	"Order_Inventory/handler"
+	"Order_Inventory/routes"
 	"github.com/gorilla/mux"
 )
 

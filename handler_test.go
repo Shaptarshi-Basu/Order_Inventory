@@ -1,9 +1,9 @@
 package handler_test
 
 import (
-	"TechNo_Tree_API/db"
-	"TechNo_Tree_API/handler"
-	"TechNo_Tree_API/routes"
+	"Order_Inventory/db"
+	"Order_Inventory/handler"
+	"Order_Inventory/routes"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"

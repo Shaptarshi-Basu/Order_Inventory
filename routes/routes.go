@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"TechNo_Tree_API/handler"
+	"Order_Inventory/handler"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
