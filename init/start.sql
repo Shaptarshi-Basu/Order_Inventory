@@ -1,0 +1,5 @@
+
+-- create the databases
+CREATE DATABASE IF NOT EXISTS test;
+CREATE TABLE test.User (name VARCHAR(100), id VARCHAR(100) NOT NULL PRIMARY KEY , email VARCHAR(100), number VARCHAR(100) );
+CREATE TABLE test.Order_inv (orderid VARCHAR(100) NOT NULL PRIMARY KEY, ordername VARCHAR(100), quantity VARCHAR(100), id VARCHAR(100) NOT NULL)
