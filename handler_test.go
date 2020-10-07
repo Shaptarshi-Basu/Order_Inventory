@@ -6,18 +6,20 @@ import (
 	"Order_Inventory/routes"
 	"github.com/gorilla/mux"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"testing"
 )
 
 type testCase struct {
-	name string
-	path string
-	setupPath string
+	name        string
+	path        string
+	setupPath   string
 	expectedVal string
 }
-func TestEndpoints (t *testing.T) {
+
+func TestEndpoints(t *testing.T) {
 	defer testCleanup()
 	testCases := []testCase{
 		{
@@ -49,6 +51,18 @@ func TestEndpoints (t *testing.T) {
 			"/create/order",
 			"",
 			"",
+		},
+		{
+			"delete_order",
+			"/delete/order/order_1",
+			"",
+			"",
+		},
+		{
+			"fetch_customer_orders",
+			"/fetch/customer/basu_11/orders",
+			"",
+			`{"orderid":"order_1","ordername":"Toffee","quantity":"2","id":"basu_11"}`,
 		},
 	}
 	go startServer()
@@ -92,7 +106,7 @@ func TestEndpoints (t *testing.T) {
 				} else {
 					t.Errorf("User data could not be fetched")
 				}
-			}else if testcase.name == "update_user" {
+			} else if testcase.name == "update_user" {
 				file, _ := os.Open("resources/userUpdate1.json")
 				reqPath := "http://localhost:7070" + testcase.path
 				resp, _ := http.Post(reqPath, "application/json", file)
@@ -100,12 +114,35 @@ func TestEndpoints (t *testing.T) {
 					t.Errorf("User cant be updated")
 				}
 
-			}else if testcase.name == "create_order" {
+			} else if testcase.name == "create_order" {
 				file, _ := os.Open("resources/order.json")
 				reqPath := "http://localhost:7070" + testcase.path
 				resp, _ := http.Post(reqPath, "application/json", file)
 				if resp.StatusCode != http.StatusOK {
 					t.Errorf("Order cant be created")
+				}
+			} else if testcase.name == "delete_order" {
+				reqPath := "http://localhost:7070" + testcase.path
+				req, err := http.NewRequest(http.MethodDelete, reqPath, nil)
+				client := &http.Client{}
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				if resp.StatusCode != http.StatusOK {
+					t.Errorf("Order cant be deleted or doesnt exist")
+				}
+			} else if testcase.name == "fetch_customer_orders" {
+				reqPath := "http://localhost:7070" + testcase.path
+				resp, _ := http.Get(reqPath)
+				if resp.StatusCode == http.StatusOK {
+					body, _ := ioutil.ReadAll(resp.Body)
+					bodStr := string(body)
+					if bodStr != testcase.expectedVal {
+						t.Errorf("Wrong data fetched")
+					}
+				} else {
+					t.Errorf("User data could not be fetched")
 				}
 			}
 
@@ -113,8 +150,8 @@ func TestEndpoints (t *testing.T) {
 	}
 
 }
-func testCleanup(){
-	conn :=db.CreatConnection()
+func testCleanup() {
+	conn := db.CreatConnection()
 	conn.Query("TRUNCATE TABLE User")
 	conn.Query("TRUNCATE TABLE Order_inv")
 }

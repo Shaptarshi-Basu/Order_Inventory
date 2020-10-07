@@ -10,19 +10,19 @@ import (
 type Handler struct {
 }
 type User struct {
-	Id string `json:"id"`
-	Name string `json:"name"`
-	Email string `json:"email"`
+	Id           string `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
 	Phone_Number string `json:"number"`
 }
 type Order struct {
-	Order_Id string `json:"orderid"`
+	Order_Id   string `json:"orderid"`
 	Order_Name string `json:"ordername"`
-	Quantity string `json:"quantity"`
-	UserID string `json:"id"`
+	Quantity   string `json:"quantity"`
+	UserID     string `json:"id"`
 }
 
-func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request){
+func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	user := User{}
 	dbConn := db.CreatConnection()
 	defer dbConn.Close()
@@ -32,15 +32,17 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request){
 	}
 	insForm, err := dbConn.Prepare("INSERT INTO User(id, name, email, number) VALUES(?,?,?,?)")
 	if err != nil {
-
+		w.Write([]byte("Cannot insert data"))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	_, err = insForm.Exec(user.Id, user.Name, user.Email, user.Phone_Number)
 	if err != nil {
-
+		w.Write([]byte("Cannot insert data"))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 
 }
-func (h *Handler) FetchUser(w http.ResponseWriter, r *http.Request){
+func (h *Handler) FetchUser(w http.ResponseWriter, r *http.Request) {
 	dbConn := db.CreatConnection()
 	defer dbConn.Close()
 	value := strings.Split(r.URL.Path, "/")[3]
@@ -50,10 +52,11 @@ func (h *Handler) FetchUser(w http.ResponseWriter, r *http.Request){
 	}
 	user := User{}
 	for result.Next() {
-		var id,name,email,number string
+		var id, name, email, number string
 		err = result.Scan(&id, &name, &email, &number)
 		if err != nil {
-			panic(err.Error())
+			w.Write([]byte("Cannot read user data"))
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		user.Id = id
 		user.Name = name
@@ -62,13 +65,14 @@ func (h *Handler) FetchUser(w http.ResponseWriter, r *http.Request){
 	}
 	jData, err := json.Marshal(user)
 	if err != nil {
-		// handle error
+		w.Write([]byte("Cannot unmarshal data fetched for user"))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jData)
 
 }
-func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request){
+func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user := User{}
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		w.Write([]byte("Cannot Decode request"))
@@ -76,7 +80,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request){
 	}
 	var queryString = "UPDATE User SET "
 	if user.Name != "" {
-			queryString += "name=?"
+		queryString += "name=?"
 	}
 	if user.Email != "" {
 		if user.Name != "" {
@@ -85,7 +89,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request){
 		queryString += "email=?"
 	}
 	if user.Phone_Number != "" {
-		if user.Name != "" || user.Email != ""{
+		if user.Name != "" || user.Email != "" {
 			queryString += ", "
 		}
 		queryString += "number=?"
@@ -96,21 +100,22 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request){
 	value := strings.Split(r.URL.Path, "/")[3]
 	insForm, err := dbConn.Prepare(queryString)
 	if err != nil {
-
+		w.Write([]byte("Cannot update user data"))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	if user.Name != "" && user.Email != "" && user.Phone_Number != "" {
 		_, err = insForm.Exec(user.Name, user.Email, user.Phone_Number, value)
-	}else if user.Name != "" && user.Email != "" {
+	} else if user.Name != "" && user.Email != "" {
 		_, err = insForm.Exec(user.Name, user.Email, value)
 	} else if user.Name != "" && user.Phone_Number != "" {
 		_, err = insForm.Exec(user.Name, user.Phone_Number, value)
-	}else if user.Email != "" && user.Phone_Number != "" {
+	} else if user.Email != "" && user.Phone_Number != "" {
 		_, err = insForm.Exec(user.Email, user.Phone_Number, value)
-	}else if user.Name != ""{
+	} else if user.Name != "" {
 		_, err = insForm.Exec(user.Name, value)
-	}else if user.Email != ""{
+	} else if user.Email != "" {
 		_, err = insForm.Exec(user.Email, value)
-	}else{
+	} else {
 		_, err = insForm.Exec(user.Phone_Number, value)
 	}
 	if err != nil {
@@ -118,7 +123,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request){
 	}
 	w.WriteHeader(http.StatusOK)
 }
-func (h *Handler) FetchAllUsers(w http.ResponseWriter, r *http.Request){
+func (h *Handler) FetchAllUsers(w http.ResponseWriter, r *http.Request) {
 	user := User{}
 	dbConn := db.CreatConnection()
 	defer dbConn.Close()
@@ -127,7 +132,7 @@ func (h *Handler) FetchAllUsers(w http.ResponseWriter, r *http.Request){
 
 	}
 	for result.Next() {
-		var id,name,email,number string
+		var id, name, email, number string
 		err = result.Scan(&id, &name, &email, &number)
 		if err != nil {
 			panic(err.Error())
@@ -144,7 +149,7 @@ func (h *Handler) FetchAllUsers(w http.ResponseWriter, r *http.Request){
 	}
 }
 
-func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request){
+func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	order := Order{}
 	dbConn := db.CreatConnection()
 	defer dbConn.Close()
@@ -163,7 +168,7 @@ func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request){
 
 }
 
-func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request){
+func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	value := strings.Split(r.URL.Path, "/")[3]
 	dbConn := db.CreatConnection()
 	_, err := dbConn.Query("Delete * FROM Order_inv WHERE orderid=?", value)
@@ -171,7 +176,7 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request){
 
 	}
 }
-func (h *Handler) FetchAllOrders(w http.ResponseWriter, r *http.Request){
+func (h *Handler) FetchAllOrders(w http.ResponseWriter, r *http.Request) {
 	value := strings.Split(r.URL.Path, "/")[3]
 	dbConn := db.CreatConnection()
 	defer dbConn.Close()
@@ -181,7 +186,7 @@ func (h *Handler) FetchAllOrders(w http.ResponseWriter, r *http.Request){
 	}
 	for result.Next() {
 		order := Order{}
-		var orderid,ordername,quantity,id string
+		var orderid, ordername, quantity, id string
 		err = result.Scan(&orderid, &ordername, &quantity, &id)
 		if err != nil {
 			panic(err.Error())

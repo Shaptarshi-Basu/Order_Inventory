@@ -13,4 +13,3 @@ func main() {
 	}
 	routes.SetRoutes(r, s)
 }
-

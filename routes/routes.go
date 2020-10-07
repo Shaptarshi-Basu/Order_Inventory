@@ -6,7 +6,8 @@ import (
 	"log"
 	"net/http"
 )
-type Server struct{
+
+type Server struct {
 	Handler handler.Handler
 }
 
