@@ -4,12 +4,13 @@ import (
 	"Order_Inventory/db"
 	"Order_Inventory/handler"
 	"Order_Inventory/routes"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/gorilla/mux"
 )
 
 type testCase struct {
@@ -53,17 +54,18 @@ func TestEndpoints(t *testing.T) {
 			"",
 		},
 		{
-			"delete_order",
-			"/delete/order/order_1",
-			"",
-			"",
-		},
-		{
 			"fetch_customer_orders",
 			"/fetch/customer/basu_11/orders",
 			"",
 			`{"orderid":"order_1","ordername":"Toffee","quantity":"2","id":"basu_11"}`,
 		},
+		{
+			"delete_order",
+			"/delete/order/order_1",
+			"",
+			"",
+		},
+
 	}
 	go startServer()
 	for _, testcase := range testCases {
@@ -151,7 +153,7 @@ func TestEndpoints(t *testing.T) {
 
 }
 func testCleanup() {
-	conn := db.CreatConnection()
+	conn, _ := db.CreatConnection()
 	conn.Query("TRUNCATE TABLE User")
 	conn.Query("TRUNCATE TABLE Order_inv")
 }

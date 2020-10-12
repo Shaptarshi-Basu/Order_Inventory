@@ -3,11 +3,14 @@ package handler
 import (
 	"Order_Inventory/db"
 	"encoding/json"
+	"github.com/op/go-logging"
+	"log"
 	"net/http"
 	"strings"
 )
 
 type Handler struct {
+	Log logging.Logger
 }
 type User struct {
 	Id           string `json:"id"`
@@ -24,37 +27,53 @@ type Order struct {
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	user := User{}
-	dbConn := db.CreatConnection()
+	dbConn, err := db.CreatConnection()
+	if err != nil {
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	defer dbConn.Close()
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		h.Log.Error(err.Error())
 		w.Write([]byte("Cannot Decode request"))
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	insForm, err := dbConn.Prepare("INSERT INTO User(id, name, email, number) VALUES(?,?,?,?)")
 	if err != nil {
+		h.Log.Error(err.Error())
 		w.Write([]byte("Cannot insert data"))
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	_, err = insForm.Exec(user.Id, user.Name, user.Email, user.Phone_Number)
 	if err != nil {
+		h.Log.Error(err.Error())
 		w.Write([]byte("Cannot insert data"))
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
 }
 func (h *Handler) FetchUser(w http.ResponseWriter, r *http.Request) {
-	dbConn := db.CreatConnection()
+	dbConn, err := db.CreatConnection()
+	if err != nil {
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	defer dbConn.Close()
 	value := strings.Split(r.URL.Path, "/")[3]
 	result, err := dbConn.Query("SELECT * FROM User WHERE id=?", value)
 	if err != nil {
-
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	user := User{}
 	for result.Next() {
 		var id, name, email, number string
 		err = result.Scan(&id, &name, &email, &number)
 		if err != nil {
+			h.Log.Error(err.Error())
 			w.Write([]byte("Cannot read user data"))
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -65,6 +84,7 @@ func (h *Handler) FetchUser(w http.ResponseWriter, r *http.Request) {
 	}
 	jData, err := json.Marshal(user)
 	if err != nil {
+		h.Log.Error(err.Error())
 		w.Write([]byte("Cannot unmarshal data fetched for user"))
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -75,6 +95,7 @@ func (h *Handler) FetchUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user := User{}
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		h.Log.Error(err.Error())
 		w.Write([]byte("Cannot Decode request"))
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -95,11 +116,17 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		queryString += "number=?"
 	}
 	queryString += " WHERE id=?"
-	dbConn := db.CreatConnection()
+	dbConn, err := db.CreatConnection()
+	if err != nil {
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	defer dbConn.Close()
 	value := strings.Split(r.URL.Path, "/")[3]
 	insForm, err := dbConn.Prepare(queryString)
 	if err != nil {
+		h.Log.Error(err.Error())
 		w.Write([]byte("Cannot update user data"))
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -119,23 +146,35 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		_, err = insForm.Exec(user.Phone_Number, value)
 	}
 	if err != nil {
-
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	w.WriteHeader(http.StatusOK)
 }
 func (h *Handler) FetchAllUsers(w http.ResponseWriter, r *http.Request) {
 	user := User{}
-	dbConn := db.CreatConnection()
+	dbConn, err := db.CreatConnection()
+	if err != nil {
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	defer dbConn.Close()
 	result, err := dbConn.Query("SELECT * FROM User ")
 	if err != nil {
-
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	for result.Next() {
 		var id, name, email, number string
 		err = result.Scan(&id, &name, &email, &number)
 		if err != nil {
-			panic(err.Error())
+			h.Log.Error(err.Error())
+			log.Fatal(err.Error())
+			w.Write([]byte(err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		user.Id = id
 		user.Name = name
@@ -143,7 +182,9 @@ func (h *Handler) FetchAllUsers(w http.ResponseWriter, r *http.Request) {
 		user.Phone_Number = number
 		jData, err := json.Marshal(user)
 		if err != nil {
-			// handle error
+			h.Log.Error(err.Error())
+			w.Write([]byte(err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		w.Write(jData)
 	}
@@ -151,38 +192,62 @@ func (h *Handler) FetchAllUsers(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	order := Order{}
-	dbConn := db.CreatConnection()
+	dbConn, err := db.CreatConnection()
+	if err != nil {
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	defer dbConn.Close()
 	if err := json.NewDecoder(r.Body).Decode(&order); err != nil {
+		h.Log.Error(err.Error())
 		w.Write([]byte("Cannot Decode request"))
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	insForm, err := dbConn.Prepare("INSERT INTO Order_inv(orderid, ordername, quantity, id) VALUES(?,?,?,?)")
 	if err != nil {
-
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	_, err = insForm.Exec(order.Order_Id, order.Order_Name, order.Quantity, order.UserID)
 	if err != nil {
-
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 
 }
 
 func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	value := strings.Split(r.URL.Path, "/")[3]
-	dbConn := db.CreatConnection()
-	_, err := dbConn.Query("Delete * FROM Order_inv WHERE orderid=?", value)
+	dbConn, err := db.CreatConnection()
 	if err != nil {
-
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	_, err = dbConn.Query("Delete FROM Order_inv WHERE orderid=?", value)
+	if err != nil {
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 func (h *Handler) FetchAllOrders(w http.ResponseWriter, r *http.Request) {
 	value := strings.Split(r.URL.Path, "/")[3]
-	dbConn := db.CreatConnection()
+	dbConn, err := db.CreatConnection()
+	if err != nil {
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	defer dbConn.Close()
 	result, err := dbConn.Query("SELECT * FROM Order_inv WHERE id=?", value)
 	if err != nil {
-
+		h.Log.Error(err.Error())
+		w.Write([]byte(err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 	for result.Next() {
 		order := Order{}
@@ -197,7 +262,9 @@ func (h *Handler) FetchAllOrders(w http.ResponseWriter, r *http.Request) {
 		order.UserID = id
 		jData, err := json.Marshal(order)
 		if err != nil {
-			// handle error
+			h.Log.Error(err.Error())
+			w.Write([]byte(err.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		w.Write(jData)
 	}
