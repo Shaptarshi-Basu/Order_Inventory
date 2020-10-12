@@ -3,9 +3,9 @@ APIs to create , fetch and update user and also to create , cancel and fetch ord
 
 
 #### Go get docker dependencies ####
-go get github.com/go-sql-driver/mysql
-go get github.com/op/go-logging
-go get github.com/gorilla/mux
+go get github.com/go-sql-driver/mysql ,
+go get github.com/op/go-logging ,
+go get github.com/gorilla/mux 
 
 #### RUN test ####
   docker-compose up
